@@ -1,0 +1,58 @@
+version: "3.1"
+
+services:
+  api-db:
+    image: kartoza/postgis:12.1
+    container_name: api-db
+    volumes:
+      - ./api-db:/var/lib/postgresql/data:delegated
+    environment:
+      - POSTGRES_USER=postgresrootuser
+      - POSTGRES_PASSWORD=postgresrootpassword
+      - POSTGRES_DB=postgresdb
+    ports:
+      - "8084:5432"
+
+  redis:
+    image: redis:6.0-alpine
+    container_name: redis
+    working_dir: /application
+    ports:
+      - "6379:6379"
+
+  api:
+    build: api/
+    container_name: api
+    working_dir: /application/api/
+    environment:
+      - PATH=$PATH:/root/.composer/vendor/bin
+      - APP_NAME=Api
+      - APP_ENV=local
+      - APP_KEY=base64:aaCKajqA06Fc+9F64VfRLReSxoD4fbNxR3M1plYJq94=
+      - APP_DEBUG=true
+      - APP_URL=http://0.0.0.0:8000
+      - LOG_CHANNEL=stack
+      - DB_CONNECTION=pgsql
+      - DB_HOST=api-db
+      - DB_PORT=5432
+      - DB_DATABASE=postgresdb
+      - DB_USERNAME=postgresrootuser
+      - DB_PASSWORD=postgresrootpassword
+      - BROADCAST_DRIVER=log
+      - SESSION_DRIVER=file
+      - SESSION_LIFETIME=120
+      - CACHE_DRIVER=redis
+      - QUEUE_CONNECTION=redis
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      - api-db
+      - redis
+    volumes:
+      - ./api:/application/api/
+      - vendor:/application/api/vendor
+    ports:
+      - "8000:8000"
+
+volumes:
+  vendor:
